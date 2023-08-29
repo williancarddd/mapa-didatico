@@ -1,3 +1,4 @@
 glob
 json
 Flask
+flask-cors
