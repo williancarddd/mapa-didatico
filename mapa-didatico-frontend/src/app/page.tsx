@@ -1,12 +1,12 @@
 import LeafletMap from "./components/LeafletMap";
-import SideBar from "./components/SideBar";
+import ListStates from "./components/ListStates";
 
 
 export default function Home() {
   
   return (
     <main className="flex min-h-screen bg-astronaut-950">
-      <SideBar />
+      <ListStates />
       <LeafletMap /> 
     </main>
   )
