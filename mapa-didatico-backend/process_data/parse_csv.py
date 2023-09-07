@@ -44,11 +44,13 @@ def process_data(fileName):
         json_data['data'] = []
         lines = csvfile.readlines()[9:]
         for line in lines:
-            json_day = {}
             line = format_lines(line)
+            json_day = {}
+            temp = replaceFloat(line[7])
+            if(temp == ''): continue
             json_day['data'] = line[0]
             json_day['hora'] = convert_hours(line[1])
-            json_day['temp_maxi_h'] = replaceFloat(line[11])
+            json_day['temp_maxi_h'] = temp
             json_data['data'].append(json_day)
     return  json_data
 

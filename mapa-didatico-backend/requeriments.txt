@@ -1,4 +1,3 @@
-glob
-json
 Flask
 flask-cors
+mysql.connector

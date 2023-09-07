@@ -1,4 +1,4 @@
-import json
+import json, os
 import mysql.connector
 
 # Carregar dados do arquivo JSON
@@ -10,7 +10,8 @@ db_config = {
     'user': 'root',
     'password': 'Bodepreto20!',
     'host': 'localhost',
-    'database': '2022_metrics_database'
+    'database': '2022_metrics_database',
+    'auth_plugin': 'mysql_native_password'
 }
 
 # Função para inserir dados na tabela "estacao"
@@ -55,17 +56,27 @@ sql_create_table_estacao = """ CREATE TABLE IF NOT EXISTS estacao (
                             ); """
 
 # Executar queries de criação de tabelas
-cursor.execute(sql_create_table_metricas)
 cursor.execute(sql_create_table_estacao)
+cursor.execute(sql_create_table_metricas)
 conn.commit()
 
+def verifica_valor_vazio(dicionario):
+    for valor in dicionario.values():
+        if valor == '':
+            return True
+    return False
 # Processar e inserir dados do JSON
+aready_done = 0
 for item in data:
     insert_estacao(cursor, item['metadata'])
     id_estacao = cursor.lastrowid
+    print(f'Foi processado {(aready_done/len(data)):.2f} %')
     for metricas in item['data']:
+        if(verifica_valor_vazio(metricas)): continue
         insert_metricas(cursor, id_estacao, metricas)
     conn.commit()
+    aready_done += 1
+    os.system('cls')
 
 # Fechar conexão com o banco de dados
 cursor.close()
