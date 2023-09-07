@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <main className="flex min-h-screen bg-astronaut-950">
       <ListStates />
-      <LeafletMap /> 
+      <LeafletMap />
     </main>
   )
 }

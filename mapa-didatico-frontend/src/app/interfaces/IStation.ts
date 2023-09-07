@@ -4,4 +4,5 @@ export interface IStation {
     regiao: string;
     latitude: string;
     longitude: string;
+    estacao: string;
 }
