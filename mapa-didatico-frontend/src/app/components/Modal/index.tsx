@@ -36,7 +36,7 @@ export default function ModalCust({open, setOpen, buttons, title, content, class
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className={` relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all   w-screen h-50vh  lg:my-8 lg:max-h-60vh sm:max-w-5xl  ${className} ${maxHeight}`}>
+              <Dialog.Panel className={` relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all   w-screen h-50vh  lg:my-8 lg:max-h-60vh sm:max-w-5xl  ${className} ${maxHeight} overflow-y-scroll scrollbar-thin scrollbar-thumb-astronaut-800`}>
                 {
                   title && ( 
                     <div className='flex flex-row justify-between pl-4 pt-6 pr-7 mb-6 mt-3 '>

@@ -70,7 +70,7 @@ aready_done = 0
 for item in data:
     insert_estacao(cursor, item['metadata'])
     id_estacao = cursor.lastrowid
-    print(f'Foi processado {(aready_done/len(data)):.2f} %')
+    print(f'Foi processado {(aready_done/len(data))*100:.2f} %')
     for metricas in item['data']:
         if(verifica_valor_vazio(metricas)): continue
         insert_metricas(cursor, id_estacao, metricas)

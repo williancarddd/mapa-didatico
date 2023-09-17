@@ -1,5 +1,5 @@
 export interface IStation {
-    Id: number;
+    id: number;
     uf: string;
     regiao: string;
     latitude: string;

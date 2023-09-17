@@ -28,7 +28,11 @@ def convert_hours(hora_utc):
     return f"{hora}:{minutos}"
 
 def replaceFloat(numero):
-    return numero.replace(',', '.')
+    new = numero.replace(',', '.')
+    if new.strip() == '':
+        return 0.0  
+    else:
+        return float(new)
 
 def process_data(fileName):
     json_data = {}
@@ -46,8 +50,8 @@ def process_data(fileName):
         for line in lines:
             line = format_lines(line)
             json_day = {}
-            temp = replaceFloat(line[7])
-            if(temp == ''): continue
+            temp = float(replaceFloat(line[7]))
+            if(temp == 0.0): continue
             json_day['data'] = line[0]
             json_day['hora'] = convert_hours(line[1])
             json_day['temp_maxi_h'] = temp
