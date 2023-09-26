@@ -2,3 +2,6 @@ Flask
 flask-cors
 mysql.connector
 scipy
+sklearn
+numpy
+pandas

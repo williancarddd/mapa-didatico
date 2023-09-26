@@ -1,84 +1,135 @@
-import json, os
+import json
+import os
 import mysql.connector
 
-# Carregar dados do arquivo JSON
-with open('../process_data/data.json', 'r') as json_file:
-    data = json.load(json_file)
 
-# Configurações do banco de dados
-db_config = {
-    'user': 'root',
-    'password': 'Bodepreto20!',
-    'host': 'localhost',
-    'database': '2022_metrics_database',
-    'auth_plugin': 'mysql_native_password'
-}
+class DatabaseManager:
+    def __init__(self, db_config):
+        self.conn = mysql.connector.connect(**db_config)
+        self.cursor = self.conn.cursor()
 
-# Função para inserir dados na tabela "estacao"
-def insert_estacao(cursor, estacao_data):
-    insert_estacao_query = """ INSERT INTO estacao (regiao, uf, estacao, codigo_wmo, latitude, longitude, altitude)
-                               VALUES (%s, %s, %s, %s, %s, %s, %s); """
-    cursor.execute(insert_estacao_query, (estacao_data['REGIAO:'], estacao_data['UF:'], estacao_data['ESTACAO:'],
-                                          estacao_data['CODIGO (WMO):'], estacao_data['LATITUDE:'],
-                                          estacao_data['LONGITUDE:'], estacao_data['ALTITUDE:']))
+    def create_tables(self):
+        sql_create_table_metricas = """ CREATE TABLE IF NOT EXISTS metricas (
+                                        id int AUTO_INCREMENT PRIMARY KEY,
+                                        id_estacao int NOT NULL,
+                                        data date NOT NULL,
+                                        hora time NOT NULL,
+                                        temp_maxi_h float
+                                    ); """
 
-# Função para inserir dados na tabela "metricas"
-def insert_metricas(cursor, id_estacao, metricas_data):
-    metricas_data['data'] = metricas_data['data'].replace('/', '-')
-    insert_metricas_query = """ INSERT INTO metricas (id_estacao, data, hora, temp_maxi_h)
-                               VALUES (%s, %s, %s, %s); """
-    # temp is float or ''
-    temp = metricas_data['temp_maxi_h'] if metricas_data['temp_maxi_h'] != '' else None
-    cursor.execute(insert_metricas_query, (id_estacao, metricas_data['data'], metricas_data['hora'], temp))
+        sql_create_table_estacao = """ CREATE TABLE IF NOT EXISTS estacao (
+                                        id int AUTO_INCREMENT PRIMARY KEY,
+                                        regiao varchar(2) NOT NULL,
+                                        uf varchar(2) NOT NULL,
+                                        estacao varchar(50) NOT NULL,
+                                        codigo_wmo varchar(10) NOT NULL,   
+                                        latitude varchar(20) NOT NULL,
+                                        longitude varchar(20) NOT NULL,
+                                        altitude varchar(20) NOT NULL,
+                                        UNIQUE KEY (codigo_wmo)
+                                    ); """
 
-# Conectar ao banco de dados MySQL
-conn = mysql.connector.connect(**db_config)
-cursor = conn.cursor()
+        self.cursor.execute(sql_create_table_estacao)
+        self.cursor.execute(sql_create_table_metricas)
+        self.conn.commit()
 
-# Definir queries para criação de tabelas
-sql_create_table_metricas = """ CREATE TABLE IF NOT EXISTS metricas (
-                                id int AUTO_INCREMENT PRIMARY KEY,
-                                id_estacao int NOT NULL,
-                                data date NOT NULL,
-                                hora time NOT NULL,
-                                temp_maxi_h float
-                            ); """
+    def commit(self):
+        self.conn.commit()
 
-sql_create_table_estacao = """ CREATE TABLE IF NOT EXISTS estacao (
-                                id int AUTO_INCREMENT PRIMARY KEY,
-                                regiao varchar(2) NOT NULL,
-                                uf varchar(2) NOT NULL,
-                                estacao varchar(50) NOT NULL,
-                                codigo_wmo varchar(10) NOT NULL,   
-                                latitude varchar(20) NOT NULL,
-                                longitude varchar(20) NOT NULL,
-                                altitude varchar(20) NOT NULL
-                            ); """
+    def close(self):
+        self.cursor.close()
+        self.conn.close()
+    
 
-# Executar queries de criação de tabelas
-cursor.execute(sql_create_table_estacao)
-cursor.execute(sql_create_table_metricas)
-conn.commit()
+class DataProcessor:
+    def __init__(self, db_manager):
+        self.db_manager = db_manager
 
-def verifica_valor_vazio(dicionario):
-    for valor in dicionario.values():
-        if valor == '':
-            return True
-    return False
-# Processar e inserir dados do JSON
-aready_done = 0
-for item in data:
-    insert_estacao(cursor, item['metadata'])
-    id_estacao = cursor.lastrowid
-    print(f'Foi processado {(aready_done/len(data))*100:.2f} %')
-    for metricas in item['data']:
-        if(verifica_valor_vazio(metricas)): continue
-        insert_metricas(cursor, id_estacao, metricas)
-    conn.commit()
-    aready_done += 1
-    os.system('cls')
+    def process_data_directory(self, data_directory):
+        total_files = len([filename for filename in os.listdir(data_directory) if filename.endswith('.json')])
+        processed_files = 0
 
-# Fechar conexão com o banco de dados
-cursor.close()
-conn.close()
-   
+        for filename in os.listdir(data_directory):
+            if filename.endswith('.json'):
+                file_path = os.path.join(data_directory, filename)
+                with open(file_path, 'r') as json_file:
+                    data = json.load(json_file)
+                    for entry in data:
+                        metadata = entry['metadata']
+                        data_info = entry['data']  
+
+                        idByStation = self._insert_or_update_station(metadata)
+                        metric_data_list = []
+
+                        for metric in data_info:
+                            metric_data_list.append(metric)
+                        
+                        # Use the bulk insertion method
+                        self.insert_bulk_metric_data(idByStation, metric_data_list)
+
+                    processed_files += 1
+                    progress = (processed_files / total_files) * 100
+                    print(f"Progress: {progress:.2f}%")
+
+
+    def _insert_or_update_station(self, metadata):
+        # Check if the station already exists in the database
+        query_select = "SELECT id FROM estacao WHERE codigo_wmo = %s"
+        self.db_manager.cursor.execute(query_select, (metadata['CODIGO (WMO):'],))
+        station_id = self.db_manager.cursor.fetchone()
+
+        if station_id:
+            # Station exists, return its ID
+            return station_id[0]
+        else:
+            # Station doesn't exist, so insert it
+            query_insert = """INSERT INTO estacao (regiao, uf, estacao, codigo_wmo, latitude, longitude, altitude)
+                           VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            values = (metadata['REGIAO:'], metadata['UF:'], metadata['ESTACAO:'],
+                      metadata['CODIGO (WMO):'], metadata['LATITUDE:'],
+                      metadata['LONGITUDE:'], metadata['ALTITUDE:'])
+            self.db_manager.cursor.execute(query_insert, values)
+            self.db_manager.conn.commit()
+
+            # Return the last inserted ID
+            return self.db_manager.cursor.lastrowid
+        
+    def _insert_metric_data(self, station_id, data_info):
+        # very low
+        query = """INSERT INTO metricas (id_estacao, data, hora, temp_maxi_h)
+                VALUES (%s, %s, %s, %s)"""
+        values = (station_id, data_info["data"], data_info["hora"], data_info["temp_maxi_h"])
+        self.db_manager.cursor.execute(query, values)
+        self.db_manager.conn.commit()
+    
+    def insert_bulk_metric_data(self, station_id, data_info_list):
+        query = """INSERT INTO metricas (id_estacao, data, hora, temp_maxi_h)
+                VALUES (%s, %s, %s, %s)"""
+        
+        # Convert data_info_list into a list of tuples
+        values = [(station_id, data_info["data"], data_info["hora"], data_info["temp_maxi_h"]) for data_info in data_info_list]
+
+        # Use executemany to insert multiple rows in a single query
+        self.db_manager.cursor.executemany(query, values)
+
+
+if __name__ == "__main__":
+    db_config = {
+        "user": "root",
+        "password": "Bodepreto20!",
+        "host": "localhost",
+        "database": "metrics_database",
+        "auth_plugin": "mysql_native_password",
+    }
+
+    db_manager = DatabaseManager(db_config)
+    data_processor = DataProcessor(db_manager)
+
+    print("Criando Tabelas ...")
+    db_manager.create_tables()
+
+    print("Insirindo os Dados ...")
+    data_directory = "../process_data/output"
+    data_processor.process_data_directory(data_directory)
+
+    db_manager.close()
