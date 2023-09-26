@@ -1,70 +1,101 @@
-import glob, json
+import glob
+import json
+import os
 
-def get_metadata(header: list[str]):
+
+def get_metadata(header):
     """
-    return metada file and header csv
+    Retorna os metadados do arquivo e o cabeçalho do CSV.
     """
-    return header[0 : 7] , header[-1]
+    return header[0:7], header[-1]
 
-def format_metada(metada: list[str]):
-    metadata = {}
-    for i in metada:
-        metadata[i.split(';')[0]] = i.split(';')[1].replace('\n', '')
-    return metadata
 
-def format_header(header: str):
-    header = header.split(';')
-    header[-1] = header[-1].replace('\n', '')
-    return header
+def format_metadata(metadata):
+    metadata_dict = {}
+    for item in metadata:
+        key, value = item.split(";")
+        metadata_dict[key] = value.strip()
+    return metadata_dict
 
-def format_lines(line: str):
-    line = line.split(';')
-    line[-1] = line[-1].replace('\n', '')
-    return line 
+
+def format_header(header):
+    header_list = header.split(";")
+    header_list[-1] = header_list[-1].strip()
+    return header_list
+
+
+def format_line(line):
+    line_list = line.split(";")
+    line_list[-1] = line_list[-1].strip()
+    return line_list
+
 
 def convert_hours(hora_utc):
     hora = hora_utc[:2]
     minutos = hora_utc[2:4]
     return f"{hora}:{minutos}"
 
-def replaceFloat(numero):
-    return numero.replace(',', '.')
 
-def process_data(fileName):
+def replace_float(numero):
+    new = numero.replace(",", ".")
+    if new.strip() == "":
+        return 0.0
+    else:
+        return float(new)
+
+
+def process_data(csv_file):
     json_data = {}
-    with open(name_csv, 'r') as csvfile:
+    with open(csv_file, "r") as csvfile:
         header = []
-        for i in range(0, 9):
+        for _ in range(0, 9):
             header.append(csvfile.readline())
-        
-        metadatas_with_header = get_metadata(header)
-        json_data['metadata'] = format_metada(metadatas_with_header[0])# get metadatas in f0 positio
 
-        # ler linhas a partir da linha 10, até o final do arquivo
-        json_data['data'] = []
+        metadata_with_header = get_metadata(header)
+        json_data["metadata"] = format_metadata(metadata_with_header[0])
+
+        json_data["data"] = []
         lines = csvfile.readlines()[9:]
         for line in lines:
-            json_day = {}
-            line = format_lines(line)
-            json_day['data'] = line[0]
-            json_day['hora'] = convert_hours(line[1])
-            json_day['temp_maxi_h'] = replaceFloat(line[11])
-            json_data['data'].append(json_day)
-    return  json_data
+            line = format_line(line)
+            temp = float(replace_float(line[7]))
+            if temp == 0.0:
+                continue
+            json_day = {
+                "data": line[0],
+                "hora": convert_hours(line[1]),
+                "temp_maxi_h": temp,
+                "CODIGO (WMO):": json_data["metadata"]["CODIGO (WMO):"]
+            }
+            json_data["data"].append(json_day)
+    return json_data
 
 
-global_json_data = []
-#in directory 2022 get all file .csv
-for name_csv in glob.glob('2022/*.csv'):
-    # process data
-    json_data = process_data(name_csv)
-    global_json_data.append(json_data)
+def process_year_directory(year_directory, output_directory):
+    global_json_data = []
+    for csv_file in glob.glob(os.path.join(year_directory, "*.csv")):
+        json_data = process_data(csv_file)
+        global_json_data.append(json_data)
 
-# save data in json file
-with open('data.json', 'w') as jsonfile:
-    json.dump(global_json_data, jsonfile, indent=4)
+    # Save data in a JSON file
+    json_filename = os.path.join(
+        output_directory, f"data_{os.path.basename(year_directory)}.json"
+    )
+    with open(json_filename, "w") as jsonfile:
+        json.dump(global_json_data, jsonfile, indent=4)
 
 
 
 
-        
+if __name__ == "__main__":
+    # Diretório raiz que contém pastas com anos (exemplo: 2020, 2021, 2022)
+    root_directory = os.path.join(os.getcwd(), "years")
+    print(root_directory)
+    # Diretório onde os arquivos JSON serão salvos
+    output_directory = os.path.join(os.getcwd(), "output")
+
+    # Iterar sobre as pastas de anos e processar os arquivos CSV
+    print(os.getcwd())
+    for year_folder in glob.glob(os.path.join(root_directory, "*")):
+        if os.path.isdir(year_folder):
+            process_year_directory(year_folder, output_directory)

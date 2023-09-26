@@ -1,4 +1,7 @@
-glob
-json
 Flask
 flask-cors
+mysql.connector
+scipy
+sklearn
+numpy
+pandas

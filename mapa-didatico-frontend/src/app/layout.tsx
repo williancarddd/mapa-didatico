@@ -16,8 +16,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      
+      <script async src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
       <body className={inter.className}>{children}</body>
+
     </html>
   )
 }
