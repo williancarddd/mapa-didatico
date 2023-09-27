@@ -5,3 +5,4 @@ scipy
 sklearn
 numpy
 pandas
+python-dotenv

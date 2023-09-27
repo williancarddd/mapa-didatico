@@ -1,5 +1,6 @@
-/process_data/years
-/process_data/output
+/process_data/years/*/*.csv
+/process_data/years/*/*.CSV
+/process_data/output/*.json
 /process_data/2022.zip
 /process_data/data.json
 /db/2022_metrics_climate.db

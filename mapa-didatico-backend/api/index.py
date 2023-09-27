@@ -2,18 +2,30 @@ from flask import Flask
 from flask_cors import CORS, cross_origin
 import mysql.connector
 import json
+import os
 
 from linear_res import PrevisaoTemperatura
+
+from dotenv import load_dotenv
+
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+
+database_name = os.environ.get("DATABASE_NAME")
+database_user = os.environ.get("DATABASE_USER")
+database_host = os.environ.get("DATABASE_HOST")
+secret_key = os.environ.get("SECRET_KEY")
+
 
 app = Flask(__name__)
 CORS(app, support_credentials=True)
 
 db_config = {
-    "user": "root",
-    "password": "Bodepreto20!",
-    "host": "localhost",
-    "database": "metrics_database",
-    "auth_plugin": "mysql_native_password",
+        "user": database_user,
+        "password": secret_key,
+        "host": database_host,
+        "database": database_name,
+        "auth_plugin": "mysql_native_password"
 }
 
 
@@ -188,11 +200,6 @@ def linear_regress_step_by_step(id_estacao, ano):
     )
 
 
-@app.route("/poly/lagrange/<int:id_estacao>", methods=["GET"])
-def lagrange(id_estacao):
-    return str(
-        "retornará o passo a passo da fórmula de regressão linear para determinada estação"
-    )
 
 
 if __name__ == "__main__":
