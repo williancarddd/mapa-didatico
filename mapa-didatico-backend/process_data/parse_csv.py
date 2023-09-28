@@ -46,7 +46,7 @@ def replace_float(numero):
 
 def process_data(csv_file):
     json_data = {}
-    with open(csv_file, "r") as csvfile:
+    with open(csv_file, "r", encoding='latin-1') as csvfile:
         header = []
         for _ in range(0, 9):
             header.append(csvfile.readline())
@@ -73,7 +73,8 @@ def process_data(csv_file):
 
 def process_year_directory(year_directory, output_directory):
     global_json_data = []
-    for csv_file in glob.glob(os.path.join(year_directory, "*.csv")):
+    for csv_file in glob.glob(os.path.join(year_directory, "*.CSV")):
+        print(csv_file)
         json_data = process_data(csv_file)
         global_json_data.append(json_data)
 
@@ -90,12 +91,11 @@ def process_year_directory(year_directory, output_directory):
 if __name__ == "__main__":
     # Diretório raiz que contém pastas com anos (exemplo: 2020, 2021, 2022)
     root_directory = os.path.join(os.getcwd(), "years")
-    print(root_directory)
     # Diretório onde os arquivos JSON serão salvos
     output_directory = os.path.join(os.getcwd(), "output")
-
+    
     # Iterar sobre as pastas de anos e processar os arquivos CSV
-    print(os.getcwd())
+ 
     for year_folder in glob.glob(os.path.join(root_directory, "*")):
         if os.path.isdir(year_folder):
             process_year_directory(year_folder, output_directory)

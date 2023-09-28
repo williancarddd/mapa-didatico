@@ -1,7 +1,15 @@
 import json
 import os
 import mysql.connector
+from dotenv import load_dotenv
 
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+
+database_name = os.environ.get("DATABASE_NAME")
+database_user = os.environ.get("DATABASE_USER")
+database_host = os.environ.get("DATABASE_HOST")
+secret_key = os.environ.get("SECRET_KEY")
 
 class DatabaseManager:
     def __init__(self, db_config):
@@ -31,6 +39,16 @@ class DatabaseManager:
 
         self.cursor.execute(sql_create_table_estacao)
         self.cursor.execute(sql_create_table_metricas)
+        self.conn.commit()
+
+    def create_database(self, name_db):
+        sql_create_database = f""" CREATE DATABASE IF NOT EXISTS {name_db}
+                                     """
+        
+        sql_use_db = F"""USE {name_db}"""
+
+        self.cursor.execute(sql_create_database)
+        self.cursor.execute(sql_use_db)
         self.conn.commit()
 
     def commit(self):
@@ -77,7 +95,9 @@ class DataProcessor:
         query_select = "SELECT id FROM estacao WHERE codigo_wmo = %s"
         self.db_manager.cursor.execute(query_select, (metadata['CODIGO (WMO):'],))
         station_id = self.db_manager.cursor.fetchone()
-
+        self.db_manager.conn.commit()
+        if metadata['CODIGO (WMO):'] == 'A042':
+            print(metadata, station_id)
         if station_id:
             # Station exists, return its ID
             return station_id[0]
@@ -115,16 +135,16 @@ class DataProcessor:
 
 if __name__ == "__main__":
     db_config = {
-        "user": "root",
-        "password": "Bodepreto20!",
-        "host": "localhost",
-        "database": "metrics_database",
+        "user": database_user,
+        "password": secret_key,
+        "host": database_host,
         "auth_plugin": "mysql_native_password",
     }
 
     db_manager = DatabaseManager(db_config)
     data_processor = DataProcessor(db_manager)
 
+    db_manager.create_database(database_name)
     print("Criando Tabelas ...")
     db_manager.create_tables()
 

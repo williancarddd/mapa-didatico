@@ -21,7 +21,7 @@ function MainMap() {
             tileLayerAttribution={configLeafLet.maptiler.attribution}
         >
             <Markers data={stationsFiltred} />
-            <ModalCust open={modal} setOpen={setModal} title="Prática de Interpolação Polinomial e Regressão Linear" content={[
+            <ModalCust open={modal} setOpen={setModal} title="Prática de Regressão Linear" content={[
                 <ModalMarker key={'modalMarker'} />
             ]} />
         </LeafletMap>

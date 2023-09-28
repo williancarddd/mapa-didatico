@@ -7,6 +7,7 @@ import { IntervalLines } from "../Charts/IntervalLines";
 import DynamicChart from "../Charts/DynamicChart";
 import HeatmapChart from "../Charts/HeatMap";
 import SelectComponent from "../SelectComponent";
+import RegressionChart from "../Charts/RegressionAnimation";
 
 export default function ModalMarker() {
     const { stationSelected } = useStationSelected();
@@ -17,7 +18,7 @@ export default function ModalMarker() {
     const [selectedYearDatabaseData, setSelectedYearDatabaseData] = useState<string | undefined>('2021');
     const [dataFromQuery, setDataFromQuery] = useState([]);
     const [dataFromQueryLinear, setDataFromQueryLinear] = useState([]);
-    const [formulaLinear, setFormulaLinear] = useState('');
+    const [formulaLinear, setFormulaLinear] = useState([]);
 
     async function handleGetData() {
         const xyz = await apiMapaDidaticoBackend.get(`/metrics/filter-x-y-z/${stationSelected?.id}/${selectedYearDatabaseData}`)
@@ -27,20 +28,12 @@ export default function ModalMarker() {
     }
 
 
-    const handleMonthChange = async (value: string) => {
+    const handleMonthChange = (value: string | undefined) => {
+        if (value === undefined) return;
         const selectedMonth = parseInt(value, 10);
         setSelectedMonth(selectedMonth);
-
-        await
-            apiMapaDidaticoBackend
-                .get(`/metricas/filter-average-month/${stationSelected?.id}/${selectedYearDatabaseData}/${selectedMonth}`)
-                .then((response: { data: SetStateAction<never[]>; }) => {
-                    setDataFromQuery(response.data);
-
-                })
-                .catch((error: any) => {
-                    console.error("Erro ao buscar os dados:", error);
-                });
+        const filteredData = avgData.filter(item => item.mes === selectedMonth);
+        setDataFromQuery(filteredData);
     };
 
     const handleYearChange = async (value: string | undefined) => {
@@ -61,12 +54,19 @@ export default function ModalMarker() {
                 });
     };
 
+    function range(start: number, end: number) {
+        return Array.from({ length: end - start + 1 }, (_, i) => i + start)
+    }
+
     useEffect(() => {
         handleGetData()
-        handleMonthChange(String(selectedMonth));
         handleYearChange(String(selectedYear));
     }, [selectedYearDatabaseData])
 
+    useEffect(() => {
+        handleMonthChange(String(selectedMonth));
+    } , [avgData]);
+    
     return (
         <>
             <div className="h-screen p-8 mb-4">
@@ -75,43 +75,47 @@ export default function ModalMarker() {
                     <SelectComponent
                         id="selectedYearDatabaseData"
                         label="Ano dos Dados"
-                        options={['2021', '2022']}
+                        options={range(2000, 2023).map(e => String(e))}
                         value={selectedYearDatabaseData}
                         onChange={setSelectedYearDatabaseData}
                     />
                 </section>
                 <IntervalLines weatherData={xyzs} avgData={avgData} />
-                <DynamicChart data={dataFromQuery} />
+                <DynamicChart data={dataFromQuery} disableFilter={true} />
 
                 <section className="flex w-full justify-center m-4 pb-4">
                     <SelectComponent
-                        id="yearFilter"
+                        id="monthFilter"
                         label="Mês"
-                        options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(e => String(e))}
-                        value={selectedYear}
-                        onChange={handleYearChange}
+                        options={['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']}
+                        value={String(selectedMonth)}
+                        onChange={handleMonthChange}
                     />
+                </section>
+                <section className="flex flex-col w-full justify-center m-4 pb-4">
+                    <HeatmapChart data={avgData} title='Media de Temperatura Diária 2022' />
                 </section>
                 <div className="inline-flex items-center justify-center w-full">
                     <hr className="w-64 h-px my-8 bg-gray-200 border-0 dark:bg-gray-700"></hr>
                     <span className="absolute px-3 font-medium text-gray-900 -translate-x-1/2 bg-white left-1/2 dark:text-white dark:bg-gray-900">Previsões Regressão Linear</span>
                 </div>
                 <section className="flex flex-col w-full justify-center m-4 pb-4">
-                    <HeatmapChart data={avgData} title='Media de Temperatura Diária 2022' />
-                    <section className="flex flex-col w-full justify-center m-4 pb-4">
+                    <section className="flex flex-col w-full justify-center  m-4 pb-4">
                         <HeatmapChart data={dataFromQueryLinear} title={`Media de Temperatura Diária Prevista Com Regressão Linear: (${selectedYear})`} />
-                        <SelectComponent
-                            id="yearFilter"
-                            label="Ano"
-                            options={['2023', '2024', '2025', '2026', '2027']}
-                            value={selectedYear}
-                            onChange={handleYearChange}
-                        />
+                        
+                        <DynamicChart data={dataFromQueryLinear} />
+                        <section className="flex w-full justify-center m-4 pb-4">
 
-                        {formulaLinear}
+                            <SelectComponent
+                                id="yearFilter"
+                                label="Ano"
+                                options={['2023', '2024', '2025', '2026', '2027', '2028']}
+                                value={selectedYear}
+                                onChange={handleYearChange}
+                            />
+                        </section>
                     </section>
                 </section>
-
             </div>
         </>
     )
