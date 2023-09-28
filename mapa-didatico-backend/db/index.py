@@ -95,7 +95,9 @@ class DataProcessor:
         query_select = "SELECT id FROM estacao WHERE codigo_wmo = %s"
         self.db_manager.cursor.execute(query_select, (metadata['CODIGO (WMO):'],))
         station_id = self.db_manager.cursor.fetchone()
-
+        self.db_manager.conn.commit()
+        if metadata['CODIGO (WMO):'] == 'A042':
+            print(metadata, station_id)
         if station_id:
             # Station exists, return its ID
             return station_id[0]

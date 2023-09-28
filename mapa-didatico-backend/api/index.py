@@ -200,7 +200,5 @@ def linear_regress_step_by_step(id_estacao, ano):
     )
 
 
-
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3001, debug=True)

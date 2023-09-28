@@ -10,16 +10,24 @@ type DataItem = {
 
 type DynamicChartProps = {
     data: DataItem[];
+    disableFilter?: boolean; // Adicionando a prop disableFilter
 };
 
-const DynamicChart: React.FC<DynamicChartProps> = ({ data }) => {
+const DynamicChart: React.FC<DynamicChartProps> = ({ data, disableFilter = false }) => {
     const [chartData, setChartData] = useState<any[]>([]);
+    const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
     useEffect(() => {
         if (!data) return;
 
+        // Filtrar os dados com base no mês selecionado (se o filtro não estiver desativado)
+        let filteredData = data;
+        if (selectedMonth !== null && !disableFilter) {
+            filteredData = data.filter(item => item.mes === selectedMonth);
+        }
+
         // Ordena os dados por data antes de processá-los
-        data.sort((a, b) => {
+        filteredData.sort((a, b) => {
             const dateA: Date = new Date(a.ano, a.mes - 1, a.dia);
             const dateB: Date = new Date(b.ano, b.mes - 1, b.dia);
             return dateA.getTime() - dateB.getTime();
@@ -31,14 +39,14 @@ const DynamicChart: React.FC<DynamicChartProps> = ({ data }) => {
                 { type: "date", label: "Data" }, // Tipo de data
                 { type: "number", label: "Média de Temperatura" },
             ],
-            ...data.map((item) => [
+            ...filteredData.map((item) => [
                 new Date(item.ano, item.mes - 1, item.dia), // Data
                 item.media_temp, // Média de Temperatura
             ])
         ];
 
         setChartData(processedData);
-    }, [data]);
+    }, [data, selectedMonth, disableFilter]);
 
     const options = {
         title: "Média de Temperatura Por Dia",
@@ -54,8 +62,25 @@ const DynamicChart: React.FC<DynamicChartProps> = ({ data }) => {
         dataLabels: 'value' // Exibe os rótulos dos pontos
     };
 
+    const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selected = parseInt(event.target.value);
+        setSelectedMonth(selected);
+    };
+
     return (
         <div>
+            {/* Filtro de Mês (apenas se o filtro não estiver desativado) */}
+            {!disableFilter && (
+                <select onChange={handleMonthChange}>
+                    <option>Mostrar todos os meses</option>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((month) => (
+                        <option key={month} value={month}>
+                            Mês {month}
+                        </option>
+                    ))}
+                </select>
+            )}
+
             {/* Gráfico */}
             <Chart
                 chartType="LineChart"

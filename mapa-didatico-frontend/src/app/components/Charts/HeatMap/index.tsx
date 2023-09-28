@@ -11,9 +11,10 @@ interface APIAverageData {
 interface HeatmapChartProps {
   data: APIAverageData[];
   title: string;
+  functionWhenClickMoth?: (month: number) => {}
 }
 
-const HeatmapChart: React.FC<HeatmapChartProps> = ({ data, title }) => {
+const HeatmapChart: React.FC<HeatmapChartProps> = ({ data, title, functionWhenClickMoth }) => {
   // Organize os dados em um formato adequado para o gráfico de calor
   const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -40,13 +41,19 @@ const HeatmapChart: React.FC<HeatmapChartProps> = ({ data, title }) => {
       data: seriesData,
     };
   });
-
+ 
   return (
     <div>
       <ReactApexChart
         options={{
           chart: {
             type: 'heatmap',
+            events: {
+              click(event, chartContext, { dataPointIndex, seriesIndex }) {
+                const clickedMonth = seriesIndex +1;
+                if(functionWhenClickMoth) functionWhenClickMoth(clickedMonth);
+              }
+            },
             toolbar: {
               show: false,
             },

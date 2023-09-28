@@ -53,9 +53,10 @@ class PrevisaoTemperatura:
     def obter_formula(self):
         intercepto = self.model.intercept_
         coeficientes = self.model.coef_
-        print(coeficientes)
-        formula = f"Temperatura = {intercepto} + {coeficientes[0]} * dia + {coeficientes[1]} * mes + {coeficientes[2]} * ano"
-        return formula
+        #print(coeficientes)
+        #formula = f"Temperatura = {intercepto} + {coeficientes[0]} * dia + {coeficientes[1]} * mes + {coeficientes[2]} * ano"
+        return [intercepto, coeficientes[0], coeficientes[1], coeficientes[2] ]
+        #return formula
     
     def prever_temperaturas_ano_meses(self, ano):
         previsoes = []
@@ -71,3 +72,4 @@ class PrevisaoTemperatura:
                 })
         formula = self.obter_formula()
         return (previsoes, formula)
+    

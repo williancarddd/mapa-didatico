@@ -2,7 +2,8 @@ Flask
 flask-cors
 mysql.connector
 scipy
-sklearn
+scikit-learn
 numpy
 pandas
 python-dotenv
+matplotlib
