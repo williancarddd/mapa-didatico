@@ -199,8 +199,8 @@ def linear_regress_step_by_step(id_estacao, ano):
         {"mapeado": mapped_result, "formula": previsoes_ano_meses[1]}, default=str
     )
 
-@app.route("/linear-gif/<int:id_estacao>/<int:ano>/<int:ano>", methods=["GET"])
-def linear_regress_step_by_step(id_estacao, ano, mes):
+@app.route("/linear-gif/<int:id_estacao>/<int:ano>/<int:mes>", methods=["GET"])
+def linear_regress_gif(id_estacao, ano, mes):
     previsao = PrevisaoTemperatura(
         db_config["host"],
         db_config["database"],

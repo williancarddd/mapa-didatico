@@ -143,6 +143,9 @@ class PrevisaoTemperatura:
             for image in images:
                 writer.append_data(imageio.imread(image))
                 os.remove(image)  # Remove the saved images after adding to the GIF
+            else:
+                return 
+        
 
     def load_monthly_data(self, ano, mes):
         conn = mysql.connector.connect(**self.db_params)
