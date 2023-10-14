@@ -1,5 +1,6 @@
-from flask import Flask
+from flask import Flask, Response
 from flask_cors import CORS, cross_origin
+import imageio
 import mysql.connector
 import json
 import os
@@ -208,8 +209,19 @@ def linear_regress_gif(id_estacao, ano, mes):
         db_config["password"],
         id_estacao,
     )
-    previsao.create_monthly_regression_gif(ano=ano, mes=mes, output_filename='temperature_regression.gif')
-    
+    previsao.create_monthly_regression_gif(ano=ano, mes=mes, output_filename='gif.gif')
+    gif_bytes = None
+    with open('gif.gif', "rb") as gif_file:
+        gif_bytes = gif_file.read()
+
+    # Create a Flask response with the GIF as an attachment
+    response = Response(gif_bytes, content_type="image/gif")
+    response.headers["Content-Disposition"] = f"attachment; filename=gif.gif"
+
+    os.remove('gif.gif')
+
+    return response
+  
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3001, debug=True)
